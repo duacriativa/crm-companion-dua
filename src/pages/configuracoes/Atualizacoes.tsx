@@ -33,7 +33,7 @@ const updates: Update[] = [
   },
   {
     date: "22/04/2026", isNew: true, items: [
-      { icon: Sparkles, title: "Editor visual AI Design (Canva-like)", tags: ["ia", "beta", "novo" as TagKind], desc: "Novo editor com Konva para criar peças visuais à parte do briefing. Liberação em B2B." },
+      { icon: Sparkles, title: "Editor visual AI Design (Canva-like)", tags: ["ia", "novo"], desc: "Novo editor com Konva para criar peças visuais à parte do briefing. Liberação em B2B." },
       { icon: CheckSquare, title: "Tarefas recorrentes avançadas", tags: ["tarefa"], desc: "Recorrência diária, semanal ou mensal com cron diário e revisão das próximas datas a serem geradas." },
     ],
   },

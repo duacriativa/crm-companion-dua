@@ -2,7 +2,13 @@ import { useState } from "react";
 import { Integracoes } from "./configuracoes/Integracoes";
 import { AsaasConfig } from "./configuracoes/AsaasConfig";
 import { Perfil } from "./configuracoes/Perfil";
+import { Aparencia } from "./configuracoes/Aparencia";
+import { Atualizacoes } from "./configuracoes/Atualizacoes";
+import { Assinatura } from "./configuracoes/Assinatura";
+import { Mobile } from "./configuracoes/Mobile";
 import { Notificacoes } from "./configuracoes/Notificacoes";
+import { Automacoes } from "./configuracoes/Automacoes";
+import { Conteudos } from "./configuracoes/Conteudos";
 import { toast } from "sonner";
 
 const tabs = [
@@ -48,25 +54,20 @@ export default function Configuracoes() {
         ))}
       </div>
 
+      {activeTab === "Perfil" && <Perfil />}
+      {activeTab === "Aparência" && <Aparencia />}
+      {activeTab === "Atualizações" && <Atualizacoes />}
+      {activeTab === "Assinatura" && <Assinatura />}
+      {activeTab === "Mobile" && <Mobile />}
+      {activeTab === "Notificações" && <Notificacoes />}
+      {activeTab === "Automações" && <Automacoes />}
+      {activeTab === "Conteúdos" && <Conteudos />}
       {activeTab === "Integrações" && (
         selectedIntegration === "asaas" ? (
           <AsaasConfig onBack={() => setSelectedIntegration(null)} />
         ) : (
           <Integracoes onSelect={handleSelectIntegration} />
         )
-      )}
-
-      {activeTab === "Perfil" && <Perfil />}
-
-      {(activeTab === "Notificações" || activeTab === "Automações") && <Notificacoes />}
-
-      {activeTab !== "Integrações" && activeTab !== "Perfil" && activeTab !== "Notificações" && activeTab !== "Automações" && (
-        <div className="surface-card p-12 text-center animate-fade-in">
-          <p className="text-lg font-semibold">{activeTab}</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Em construção — vou recriar essa aba seguindo o mesmo padrão visual.
-          </p>
-        </div>
       )}
     </div>
   );
