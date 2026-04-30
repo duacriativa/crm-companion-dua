@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Integracoes } from "./configuracoes/Integracoes";
 import { AsaasConfig } from "./configuracoes/AsaasConfig";
+import { Perfil } from "./configuracoes/Perfil";
 import { toast } from "sonner";
 
 const tabs = [
@@ -54,7 +55,9 @@ export default function Configuracoes() {
         )
       )}
 
-      {activeTab !== "Integrações" && (
+      {activeTab === "Perfil" && <Perfil />}
+
+      {activeTab !== "Integrações" && activeTab !== "Perfil" && (
         <div className="surface-card p-12 text-center animate-fade-in">
           <p className="text-lg font-semibold">{activeTab}</p>
           <p className="text-sm text-muted-foreground mt-2">
