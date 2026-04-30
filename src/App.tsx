@@ -22,16 +22,14 @@ const App = () => (
           <Route element={<AppLayout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/clientes" element={<Placeholder title="Clientes" />} />
-            <Route path="/pipelines" element={<Placeholder title="Pipelines" />} />
-            <Route path="/agentes" element={<Placeholder title="Agentes IA" />} />
-            <Route path="/tarefas" element={<Placeholder title="Tarefas" />} />
+            <Route path="/pipelines" element={<Placeholder title="Funil" />} />
+            <Route path="/pipelines/:slug" element={<Placeholder title="Funil" />} />
+            <Route path="/whatsapp" element={<WhatsApp />} />
             <Route path="/agenda" element={<Placeholder title="Agenda" />} />
             <Route path="/financeiro" element={<Placeholder title="Financeiro" />} />
             <Route path="/servicos" element={<Placeholder title="Serviços" />} />
-            <Route path="/orcamentos" element={<Placeholder title="Orçamentos" />} />
+            <Route path="/contratos" element={<Placeholder title="Contratos" />} />
             <Route path="/briefings" element={<Placeholder title="Briefings" />} />
-            <Route path="/paginas" element={<Placeholder title="Páginas" />} />
-            <Route path="/whatsapp" element={<WhatsApp />} />
             <Route path="/configuracoes" element={<Configuracoes />} />
           </Route>
           <Route path="*" element={<NotFound />} />
