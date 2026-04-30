@@ -86,102 +86,102 @@ type Segment = {
 const SEGMENTS: Record<SegmentKey, Segment> = {
   champions: {
     key: "champions",
-    label: "Champions",
-    description: "Compraram recente, frequente e gastam alto. Recompense.",
+    label: "1. Campeões",
+    description: "Compram recente, com frequência e alto valor. Recompense.",
     icon: Crown,
-    color: "text-amber-600 dark:text-amber-400",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/30",
+    color: "text-white",
+    bg: "bg-sky-600",
+    border: "border-sky-700",
   },
   loyal: {
     key: "loyal",
-    label: "Loyal",
-    description: "Frequentes e bom valor. Engaje com programas de fidelidade.",
+    label: "2. Clientes leais",
+    description: "Frequentes e bom valor. Engaje com fidelidade.",
     icon: Heart,
-    color: "text-rose-600 dark:text-rose-400",
-    bg: "bg-rose-500/10",
-    border: "border-rose-500/30",
+    color: "text-sky-900",
+    bg: "bg-sky-200",
+    border: "border-sky-300",
   },
   potential: {
     key: "potential",
-    label: "Potential Loyalists",
-    description: "Compraram recente, valor médio. Ofereça upsell.",
+    label: "3. Potenciais leais",
+    description: "Compraram recente, valor médio. Faça upsell.",
     icon: TrendingUp,
-    color: "text-emerald-600 dark:text-emerald-400",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/30",
+    color: "text-sky-900",
+    bg: "bg-sky-100",
+    border: "border-sky-200",
   },
   new: {
     key: "new",
-    label: "New Customers",
+    label: "4. Clientes recentes",
     description: "Compra recente, baixa frequência. Onboarding.",
     icon: Sparkles,
-    color: "text-sky-600 dark:text-sky-400",
-    bg: "bg-sky-500/10",
-    border: "border-sky-500/30",
+    color: "text-amber-900",
+    bg: "bg-amber-300",
+    border: "border-amber-400",
   },
   promising: {
     key: "promising",
-    label: "Promising",
+    label: "5. Promissores",
     description: "Recente mas gastou pouco. Eduque sobre valor.",
     icon: ArrowUpRight,
-    color: "text-cyan-600 dark:text-cyan-400",
-    bg: "bg-cyan-500/10",
-    border: "border-cyan-500/30",
+    color: "text-white",
+    bg: "bg-sky-500",
+    border: "border-sky-600",
   },
   needAttention: {
     key: "needAttention",
-    label: "Need Attention",
+    label: "6. Precisam de atenção",
     description: "Recência, frequência e valor médios. Reative.",
     icon: Bell,
-    color: "text-yellow-600 dark:text-yellow-400",
-    bg: "bg-yellow-500/10",
-    border: "border-yellow-500/30",
+    color: "text-white",
+    bg: "bg-emerald-500",
+    border: "border-emerald-600",
   },
   aboutToSleep: {
     key: "aboutToSleep",
-    label: "About to Sleep",
+    label: "7. Prestes a dormir",
     description: "Caindo de engajamento. Campanha de reativação.",
     icon: Snowflake,
-    color: "text-orange-600 dark:text-orange-400",
-    bg: "bg-orange-500/10",
-    border: "border-orange-500/30",
+    color: "text-sky-900",
+    bg: "bg-sky-300",
+    border: "border-sky-400",
   },
   atRisk: {
     key: "atRisk",
-    label: "At Risk",
-    description: "Bons compradores que sumiram. Personalize a abordagem.",
+    label: "8. Em risco",
+    description: "Bons clientes que sumiram. Personalize a abordagem.",
     icon: AlertTriangle,
-    color: "text-red-600 dark:text-red-400",
-    bg: "bg-red-500/10",
-    border: "border-red-500/30",
+    color: "text-white",
+    bg: "bg-cyan-500",
+    border: "border-cyan-600",
   },
   cantLose: {
     key: "cantLose",
-    label: "Can't Lose Them",
+    label: "9. Não pode perdê-los",
     description: "Alto valor, sumiram. PRIORIDADE máxima.",
     icon: AlertTriangle,
-    color: "text-red-700 dark:text-red-300",
-    bg: "bg-red-600/15",
-    border: "border-red-600/40",
+    color: "text-yellow-900",
+    bg: "bg-yellow-300",
+    border: "border-yellow-400",
   },
   hibernating: {
     key: "hibernating",
-    label: "Hibernating",
+    label: "10. Hibernando",
     description: "Inativos há muito tempo, valor médio.",
     icon: Snowflake,
-    color: "text-slate-600 dark:text-slate-400",
-    bg: "bg-slate-500/10",
-    border: "border-slate-500/30",
+    color: "text-white",
+    bg: "bg-slate-800",
+    border: "border-slate-900",
   },
   lost: {
     key: "lost",
-    label: "Lost",
+    label: "11. Perdidos",
     description: "Praticamente perdidos. Última tentativa ou arquive.",
     icon: Skull,
-    color: "text-zinc-600 dark:text-zinc-400",
-    bg: "bg-zinc-500/10",
-    border: "border-zinc-500/30",
+    color: "text-white",
+    bg: "bg-rose-400",
+    border: "border-rose-500",
   },
 };
 
@@ -665,77 +665,136 @@ function RfvCell({ label, value }: { label: string; value: number }) {
   );
 }
 
+/**
+ * Layout fixo da Matriz RFM (estilo treemap).
+ * Grid 12 colunas (Recência →) × 12 linhas (Frequência + Valor ↑).
+ * Cada célula define onde cada segmento ocupa.
+ */
+const MATRIX_BLOCKS: {
+  key: SegmentKey;
+  // grid: colStart, colSpan, rowStart, rowSpan (1-indexed)
+  col: [number, number];
+  row: [number, number];
+}[] = [
+  // Topo (alta freq+valor)
+  { key: "cantLose",     col: [1, 3],  row: [1, 3] },   // canto sup-esq
+  { key: "loyal",        col: [4, 6],  row: [1, 4] },   // centro-topo grande
+  { key: "champions",    col: [10, 3], row: [1, 2] },   // canto sup-dir
+  // Meio
+  { key: "atRisk",       col: [1, 3],  row: [4, 4] },   // grande à esquerda
+  { key: "needAttention",col: [6, 2],  row: [5, 2] },   // verde no centro
+  { key: "potential",    col: [8, 5],  row: [3, 5] },   // grande à direita
+  // Base
+  { key: "lost",         col: [1, 3],  row: [8, 5] },   // rosa grande inferior-esq
+  { key: "hibernating",  col: [4, 2],  row: [8, 2] },   // azul escuro
+  { key: "aboutToSleep", col: [6, 2],  row: [8, 4] },   // claro estreito
+  { key: "promising",    col: [8, 2],  row: [10, 3] },  // azul médio
+  { key: "new",          col: [10, 3], row: [10, 3] },  // amarelo canto inf-dir
+];
+
 function MatrixView({ clientes }: { clientes: EnrichedCliente[] }) {
-  // 5x5 matriz Recência (eixo Y, alto p/ baixo: 5→1) × Frequência (eixo X 1→5)
-  const cells: EnrichedCliente[][][] = Array.from({ length: 5 }, () =>
-    Array.from({ length: 5 }, () => []),
-  );
-  clientes.forEach((c) => {
-    const row = 5 - c.recency; // 0..4
-    const col = c.frequency - 1; // 0..4
-    cells[row][col].push(c);
-  });
+  const counts = clientes.reduce<Record<string, EnrichedCliente[]>>((acc, c) => {
+    (acc[c.segKey] ||= []).push(c);
+    return acc;
+  }, {});
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Matriz Recência × Frequência</CardTitle>
+        <CardTitle className="text-base">Matriz RFM</CardTitle>
         <CardDescription>
-          Tamanho da bolha = MRR. Cor = segmento. Eixo Y: Recência (5 = recente). Eixo X: Frequência.
+          Cada bloco representa um segmento. O tamanho indica a importância estratégica;
+          a posição combina <strong>Recência</strong> (eixo horizontal) com{" "}
+          <strong>Frequência + Valor monetário</strong> (eixo vertical).
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex gap-2">
-          {/* Y axis labels */}
-          <div className="flex flex-col justify-between py-2 pr-1 text-[10px] font-semibold uppercase text-muted-foreground">
-            <span>R 5</span><span>4</span><span>3</span><span>2</span><span>R 1</span>
+        <div className="flex gap-3">
+          {/* Eixo Y */}
+          <div className="flex w-6 items-center justify-center">
+            <div className="flex -rotate-90 whitespace-nowrap text-xs font-medium text-muted-foreground">
+              Frequência + valor monetário (médio) ↑
+            </div>
           </div>
-          <div className="grid flex-1 grid-cols-5 gap-1">
-            {cells.map((row, ri) =>
-              row.map((cell, ci) => (
-                <div
-                  key={`${ri}-${ci}`}
-                  className="relative flex min-h-[80px] items-center justify-center rounded border bg-muted/20 p-1"
-                >
-                  <div className="absolute left-1 top-1 text-[9px] text-muted-foreground/60">
-                    {5 - ri},{ci + 1}
-                  </div>
-                  <div className="flex flex-wrap items-center justify-center gap-1">
-                    {cell.map((c) => {
-                      const size = 14 + c.vScore * 5; // 19..39 px
-                      return (
-                        <Tooltip key={c.id}>
-                          <TooltipTrigger asChild>
-                            <div
-                              className={cn(
-                                "cursor-pointer rounded-full border-2 transition hover:scale-110",
-                                c.segment.bg,
-                                c.segment.border,
-                              )}
-                              style={{ width: size, height: size }}
-                            />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="space-y-1 text-xs">
-                              <div className="font-semibold">{c.name}</div>
-                              <SegmentBadge seg={c.segment} />
-                              <div className="text-muted-foreground">
-                                R{c.recency} · F{c.frequency} · V{c.vScore} · R$ {c.mrr.toLocaleString("pt-BR")}/mês
-                              </div>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    })}
-                  </div>
-                </div>
-              )),
-            )}
+
+          <div className="flex-1">
+            <div
+              className="grid aspect-square w-full gap-1.5"
+              style={{
+                gridTemplateColumns: "repeat(12, minmax(0,1fr))",
+                gridTemplateRows: "repeat(12, minmax(0,1fr))",
+              }}
+            >
+              {MATRIX_BLOCKS.map((b) => {
+                const seg = SEGMENTS[b.key];
+                const list = counts[b.key] || [];
+                const Icon = seg.icon;
+                return (
+                  <Tooltip key={b.key}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={cn(
+                          "group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-md border p-2 shadow-sm transition hover:scale-[1.02] hover:shadow-md",
+                          seg.bg,
+                          seg.border,
+                          seg.color,
+                        )}
+                        style={{
+                          gridColumn: `${b.col[0]} / span ${b.col[1]}`,
+                          gridRow: `${b.row[0]} / span ${b.row[1]}`,
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-1">
+                          <div className="flex items-center gap-1 text-[11px] font-semibold leading-tight">
+                            <Icon className="h-3 w-3 shrink-0" />
+                            <span className="line-clamp-2">{seg.label}</span>
+                          </div>
+                          {list.length > 0 && (
+                            <span className="rounded-full bg-background/30 px-1.5 py-0.5 text-[10px] font-bold backdrop-blur-sm">
+                              {list.length}
+                            </span>
+                          )}
+                        </div>
+                        {/* dots representando clientes */}
+                        {list.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-0.5">
+                            {list.slice(0, 18).map((c) => (
+                              <span
+                                key={c.id}
+                                className="h-1.5 w-1.5 rounded-full bg-background/70"
+                                title={c.name}
+                              />
+                            ))}
+                            {list.length > 18 && (
+                              <span className="text-[9px] opacity-80">
+                                +{list.length - 18}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <div className="space-y-1 text-xs">
+                        <div className="font-semibold">{seg.label}</div>
+                        <div className="text-muted-foreground">{seg.description}</div>
+                        <div className="pt-1 font-medium">
+                          {list.length} {list.length === 1 ? "cliente" : "clientes"}
+                          {list.length > 0 && (
+                            <> · MRR R$ {list.reduce((s, c) => s + c.mrr, 0).toLocaleString("pt-BR")}</>
+                          )}
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+            {/* Eixo X */}
+            <div className="mt-2 flex items-center justify-end text-xs font-medium text-muted-foreground">
+              Recência →
+            </div>
           </div>
-        </div>
-        {/* X axis */}
-        <div className="ml-7 mt-1 grid grid-cols-5 gap-1 text-center text-[10px] font-semibold uppercase text-muted-foreground">
-          <span>F 1</span><span>2</span><span>3</span><span>4</span><span>F 5</span>
         </div>
       </CardContent>
     </Card>
