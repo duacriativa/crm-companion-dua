@@ -1,19 +1,18 @@
 import { NavLink, useLocation } from "react-router-dom";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Users,
   GitBranch,
-  Sparkles,
-  CheckSquare,
   Calendar,
   DollarSign,
   Briefcase,
   FileText,
   ClipboardList,
-  FileCode,
   MessageCircle,
   Settings,
   Plus,
+  ChevronDown,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,6 +24,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -32,22 +34,22 @@ import { Button } from "@/components/ui/button";
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Clientes", url: "/clientes", icon: Users },
-  { title: "Pipelines", url: "/pipelines", icon: GitBranch },
-  { title: "Agentes IA", url: "/agentes", icon: Sparkles },
-  { title: "Tarefas", url: "/tarefas", icon: CheckSquare },
-  { title: "Agenda", url: "/agenda", icon: Calendar },
+];
+
+const pipelineFunis = [
+  { title: "Landing Page - Dua", url: "/pipelines/landing-page-dua" },
+  { title: "Tráfego Pago", url: "/pipelines/trafego-pago" },
 ];
 
 const businessItems = [
+  { title: "Agenda", url: "/agenda", icon: Calendar },
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
   { title: "Serviços", url: "/servicos", icon: Briefcase },
-  { title: "Orçamentos", url: "/orcamentos", icon: FileText },
+  { title: "Contratos", url: "/contratos", icon: FileText },
   { title: "Briefings", url: "/briefings", icon: ClipboardList },
-  { title: "Páginas", url: "/paginas", icon: FileCode },
 ];
 
 const channelItems = [
-  { title: "WhatsApp", url: "/whatsapp", icon: MessageCircle },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
@@ -55,6 +57,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
+  const [funilOpen, setFunilOpen] = useState(pathname.startsWith("/pipelines"));
 
   const isActive = (url: string) =>
     url === "/" ? pathname === "/" : pathname.startsWith(url);
@@ -101,7 +104,63 @@ export function AppSidebar() {
       <SidebarContent className="px-2">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>{mainItems.map(renderItem)}</SidebarMenu>
+            <SidebarMenu>
+              {mainItems.map(renderItem)}
+
+              {/* Funil (Pipelines) com submenu */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={isActive("/pipelines")}
+                  tooltip="Funil"
+                  onClick={() => setFunilOpen((o) => !o)}
+                  className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:font-medium"
+                >
+                  <GitBranch className="h-4 w-4 shrink-0" />
+                  <span>Funil</span>
+                  {!collapsed && (
+                    <ChevronDown
+                      className={`ml-auto h-4 w-4 transition-transform ${
+                        funilOpen ? "rotate-0" : "-rotate-90"
+                      }`}
+                    />
+                  )}
+                </SidebarMenuButton>
+                {!collapsed && funilOpen && (
+                  <SidebarMenuSub>
+                    {pipelineFunis.map((f) => (
+                      <SidebarMenuSubItem key={f.url}>
+                        <SidebarMenuSubButton asChild isActive={pathname === f.url}>
+                          <NavLink to={f.url}>{f.title}</NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton asChild>
+                        <NavLink to="/pipelines" className="text-muted-foreground">
+                          <Plus className="h-3.5 w-3.5" />
+                          <span>Novo funil</span>
+                        </NavLink>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                )}
+              </SidebarMenuItem>
+
+              {/* WhatsApp logo abaixo de Pipelines */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive("/whatsapp")}
+                  tooltip="WhatsApp"
+                  className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:font-medium"
+                >
+                  <NavLink to="/whatsapp">
+                    <MessageCircle className="h-4 w-4 shrink-0" />
+                    <span>WhatsApp</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
