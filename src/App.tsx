@@ -7,6 +7,7 @@ import AppLayout from "@/components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import WhatsApp from "./pages/WhatsApp";
 import Configuracoes from "./pages/Configuracoes";
+import Clientes from "./pages/Clientes";
 import Placeholder from "./pages/Placeholder";
 import NotFound from "./pages/NotFound";
 
@@ -21,7 +22,7 @@ const App = () => (
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/clientes" element={<Placeholder title="Clientes" />} />
+            <Route path="/clientes" element={<Clientes />} />
             <Route path="/pipelines" element={<Placeholder title="Funil" />} />
             <Route path="/pipelines/:slug" element={<Placeholder title="Funil" />} />
             <Route path="/whatsapp" element={<WhatsApp />} />
