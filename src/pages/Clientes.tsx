@@ -4,13 +4,19 @@ import {
   Plus,
   Search,
   Bell,
-  Clock,
-  AlertTriangle,
   TrendingUp,
-  Filter,
-  Link as LinkIcon,
+  TrendingDown,
+  Crown,
+  Heart,
+  AlertTriangle,
+  Snowflake,
+  Skull,
+  Sparkles,
   LayoutGrid,
   List as ListIcon,
+  ArrowUpRight,
+  ArrowDownRight,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,760 +46,767 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-/* ----------------------------- Inatividade ------------------------------ */
+/* =========================================================================
+   MATRIZ RFV — Recência, Frequência, Valor (MRR)
+   Escala 1–5 em cada eixo (125 combinações possíveis)
+   ========================================================================= */
 
-type InactivityKey =
-  | "ativo"
-  | "d1"
-  | "d3"
-  | "d7"
-  | "d15"
-  | "d30"
-  | "d45"
-  | "d60"
-  | "d90"
-  | "d180"
-  | "d360";
+type SegmentKey =
+  | "champions"
+  | "loyal"
+  | "potential"
+  | "new"
+  | "promising"
+  | "needAttention"
+  | "aboutToSleep"
+  | "atRisk"
+  | "cantLose"
+  | "hibernating"
+  | "lost";
 
-const inactivitySteps: {
-  key: InactivityKey;
+type Segment = {
+  key: SegmentKey;
   label: string;
-  min: number; // dias mínimos sem responder
-  tone: "success" | "info" | "warning" | "danger" | "critical";
-}[] = [
-  { key: "ativo", label: "Ativo (< 1d)", min: 0, tone: "success" },
-  { key: "d1", label: "1 dia", min: 1, tone: "info" },
-  { key: "d3", label: "3 dias", min: 3, tone: "info" },
-  { key: "d7", label: "7 dias", min: 7, tone: "warning" },
-  { key: "d15", label: "15 dias", min: 15, tone: "warning" },
-  { key: "d30", label: "30 dias", min: 30, tone: "danger" },
-  { key: "d45", label: "45 dias", min: 45, tone: "danger" },
-  { key: "d60", label: "60 dias", min: 60, tone: "danger" },
-  { key: "d90", label: "90 dias", min: 90, tone: "critical" },
-  { key: "d180", label: "180 dias", min: 180, tone: "critical" },
-  { key: "d360", label: "360 dias", min: 360, tone: "critical" },
-];
-
-function classifyInactivity(daysSinceReply: number): InactivityKey {
-  let current: InactivityKey = "ativo";
-  for (const s of inactivitySteps) {
-    if (daysSinceReply >= s.min) current = s.key;
-  }
-  return current;
-}
-
-const toneClasses: Record<string, string> = {
-  success: "bg-success/15 text-success border-success/30",
-  info: "bg-primary/15 text-primary border-primary/30",
-  warning: "bg-warning/15 text-warning border-warning/30",
-  danger: "bg-destructive/15 text-destructive border-destructive/40",
-  critical:
-    "bg-destructive/25 text-destructive border-destructive/60 ring-1 ring-destructive/30",
+  description: string;
+  icon: typeof Crown;
+  color: string; // tailwind text color
+  bg: string; // tailwind bg
+  border: string; // tailwind border
 };
 
-/* ------------------------------ Mock data ------------------------------- */
+const SEGMENTS: Record<SegmentKey, Segment> = {
+  champions: {
+    key: "champions",
+    label: "Champions",
+    description: "Compraram recente, frequente e gastam alto. Recompense.",
+    icon: Crown,
+    color: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/30",
+  },
+  loyal: {
+    key: "loyal",
+    label: "Loyal",
+    description: "Frequentes e bom valor. Engaje com programas de fidelidade.",
+    icon: Heart,
+    color: "text-rose-600 dark:text-rose-400",
+    bg: "bg-rose-500/10",
+    border: "border-rose-500/30",
+  },
+  potential: {
+    key: "potential",
+    label: "Potential Loyalists",
+    description: "Compraram recente, valor médio. Ofereça upsell.",
+    icon: TrendingUp,
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/30",
+  },
+  new: {
+    key: "new",
+    label: "New Customers",
+    description: "Compra recente, baixa frequência. Onboarding.",
+    icon: Sparkles,
+    color: "text-sky-600 dark:text-sky-400",
+    bg: "bg-sky-500/10",
+    border: "border-sky-500/30",
+  },
+  promising: {
+    key: "promising",
+    label: "Promising",
+    description: "Recente mas gastou pouco. Eduque sobre valor.",
+    icon: ArrowUpRight,
+    color: "text-cyan-600 dark:text-cyan-400",
+    bg: "bg-cyan-500/10",
+    border: "border-cyan-500/30",
+  },
+  needAttention: {
+    key: "needAttention",
+    label: "Need Attention",
+    description: "Recência, frequência e valor médios. Reative.",
+    icon: Bell,
+    color: "text-yellow-600 dark:text-yellow-400",
+    bg: "bg-yellow-500/10",
+    border: "border-yellow-500/30",
+  },
+  aboutToSleep: {
+    key: "aboutToSleep",
+    label: "About to Sleep",
+    description: "Caindo de engajamento. Campanha de reativação.",
+    icon: Snowflake,
+    color: "text-orange-600 dark:text-orange-400",
+    bg: "bg-orange-500/10",
+    border: "border-orange-500/30",
+  },
+  atRisk: {
+    key: "atRisk",
+    label: "At Risk",
+    description: "Bons compradores que sumiram. Personalize a abordagem.",
+    icon: AlertTriangle,
+    color: "text-red-600 dark:text-red-400",
+    bg: "bg-red-500/10",
+    border: "border-red-500/30",
+  },
+  cantLose: {
+    key: "cantLose",
+    label: "Can't Lose Them",
+    description: "Alto valor, sumiram. PRIORIDADE máxima.",
+    icon: AlertTriangle,
+    color: "text-red-700 dark:text-red-300",
+    bg: "bg-red-600/15",
+    border: "border-red-600/40",
+  },
+  hibernating: {
+    key: "hibernating",
+    label: "Hibernating",
+    description: "Inativos há muito tempo, valor médio.",
+    icon: Snowflake,
+    color: "text-slate-600 dark:text-slate-400",
+    bg: "bg-slate-500/10",
+    border: "border-slate-500/30",
+  },
+  lost: {
+    key: "lost",
+    label: "Lost",
+    description: "Praticamente perdidos. Última tentativa ou arquive.",
+    icon: Skull,
+    color: "text-zinc-600 dark:text-zinc-400",
+    bg: "bg-zinc-500/10",
+    border: "border-zinc-500/30",
+  },
+};
+
+/** Classifica um cliente em um segmento RFV a partir de R, F, V (1–5). */
+function classifyRFV(r: number, f: number, v: number): SegmentKey {
+  if (r >= 4 && f >= 4 && v >= 4) return "champions";
+  if (r >= 3 && f >= 4) return "loyal";
+  if (r >= 4 && f <= 2 && v <= 2) return "new";
+  if (r >= 4 && f <= 3) return "potential";
+  if (r >= 3 && f <= 2 && v <= 2) return "promising";
+  if (r <= 2 && f >= 4 && v >= 4) return "cantLose";
+  if (r <= 2 && f >= 3 && v >= 3) return "atRisk";
+  if (r === 2 && f <= 2) return "aboutToSleep";
+  if (r <= 2 && f <= 2 && v <= 2) return "lost";
+  if (r <= 2) return "hibernating";
+  return "needAttention";
+}
+
+/* ----------------------------- Mock de dados ----------------------------- */
 
 type Cliente = {
-  id: string;
-  nome: string;
-  empresa?: string;
+  id: number;
+  name: string;
+  segmento: string;
   email: string;
-  telefone: string;
-  segmento?: string;
-  tags: string[];
-  pipeline?: string;
-  valorMensal?: number;
-  /** ISO date — quando entrou na base */
-  entradaBase: string;
-  /** ISO date — última resposta do cliente */
-  ultimaResposta: string;
+  // RFV
+  recency: number; // 1–5 (5 = comprou/interagiu há pouco)
+  frequency: number; // 1–5 (5 = muito frequente)
+  mrr: number; // valor mensal recorrente em R$
+  vScore: number; // 1–5 derivado do MRR
+  daysInBase: number;
+  daysSinceContact: number;
+  previousSegment?: SegmentKey;
 };
 
-const today = new Date();
-const daysAgo = (n: number) =>
-  new Date(today.getTime() - n * 24 * 60 * 60 * 1000).toISOString();
+// Buckets de MRR -> V score
+function mrrToV(mrr: number): number {
+  if (mrr >= 5000) return 5;
+  if (mrr >= 2500) return 4;
+  if (mrr >= 1200) return 3;
+  if (mrr >= 500) return 2;
+  return 1;
+}
 
-const mockClientes: Cliente[] = [
-  {
-    id: "1",
-    nome: "Sara Aires",
-    empresa: "Studio Sara",
-    email: "sara@studio.com",
-    telefone: "(85) 99945-4945",
-    segmento: "Branding",
-    tags: ["trafego-pago", "interesse:combo"],
-    pipeline: "Tráfego Pago",
-    valorMensal: 2500,
-    entradaBase: daysAgo(420),
-    ultimaResposta: daysAgo(0),
-  },
-  {
-    id: "2",
-    nome: "Ariela Martins",
-    email: "ariela@gmail.com",
-    telefone: "(85) 99715-2819",
-    segmento: "E-commerce",
-    tags: ["trafego-pago"],
-    pipeline: "Landing Page",
-    valorMensal: 1800,
-    entradaBase: daysAgo(95),
-    ultimaResposta: daysAgo(4),
-  },
-  {
-    id: "3",
-    nome: "Pedro Victor Ribeiro",
-    empresa: "PVR Marketing",
-    email: "pedro@pvr.com",
-    telefone: "(11) 92151-5051",
-    segmento: "Agência",
-    tags: ["interesse:combo"],
-    valorMensal: 3200,
-    entradaBase: daysAgo(220),
-    ultimaResposta: daysAgo(12),
-  },
-  {
-    id: "4",
-    nome: "Patricia Faria",
-    email: "patricia@faria.com",
-    telefone: "(27) 99750-6641",
-    segmento: "Imobiliário",
-    tags: ["trafego"],
-    valorMensal: 1500,
-    entradaBase: daysAgo(60),
-    ultimaResposta: daysAgo(22),
-  },
-  {
-    id: "5",
-    nome: "João Mendes",
-    empresa: "Mendes Adv.",
-    email: "joao@mendes.adv.br",
-    telefone: "(11) 98888-1010",
-    segmento: "Jurídico",
-    tags: ["recorrente"],
-    valorMensal: 4500,
-    entradaBase: daysAgo(540),
-    ultimaResposta: daysAgo(38),
-  },
-  {
-    id: "6",
-    nome: "Carla Souza",
-    email: "carla@souza.com",
-    telefone: "(31) 99777-2020",
-    segmento: "Beleza",
-    tags: ["churn-risk"],
-    valorMensal: 980,
-    entradaBase: daysAgo(180),
-    ultimaResposta: daysAgo(72),
-  },
-  {
-    id: "7",
-    nome: "Rogério Lima",
-    empresa: "Lima Construções",
-    email: "rogerio@lima.com",
-    telefone: "(81) 99555-7070",
-    segmento: "Construção",
-    tags: ["vip"],
-    valorMensal: 6800,
-    entradaBase: daysAgo(800),
-    ultimaResposta: daysAgo(120),
-  },
-  {
-    id: "8",
-    nome: "Marcos Antunes",
-    email: "marcos@antunes.io",
-    telefone: "(21) 99333-4040",
-    segmento: "Tech",
-    tags: ["dormente"],
-    valorMensal: 2100,
-    entradaBase: daysAgo(900),
-    ultimaResposta: daysAgo(210),
-  },
-  {
-    id: "9",
-    nome: "Helena Castro",
-    email: "helena@castro.com",
-    telefone: "(85) 99111-3030",
-    segmento: "Saúde",
-    tags: ["dormente"],
-    entradaBase: daysAgo(1200),
-    ultimaResposta: daysAgo(380),
-  },
+const CLIENTES_MOCK: Omit<Cliente, "vScore">[] = [
+  { id: 1, name: "Loja Aurora", segmento: "E-commerce", email: "contato@aurora.com", recency: 5, frequency: 5, mrr: 6800, daysInBase: 412, daysSinceContact: 2 },
+  { id: 2, name: "Studio Vértice", segmento: "Arquitetura", email: "ola@vertice.co", recency: 5, frequency: 4, mrr: 3200, daysInBase: 280, daysSinceContact: 4, previousSegment: "loyal" },
+  { id: 3, name: "Café da Esquina", segmento: "Food", email: "marketing@cafe.com", recency: 4, frequency: 5, mrr: 1800, daysInBase: 198, daysSinceContact: 8 },
+  { id: 4, name: "TechNova SaaS", segmento: "SaaS", email: "growth@technova.io", recency: 2, frequency: 5, mrr: 7400, daysInBase: 520, daysSinceContact: 47, previousSegment: "champions" },
+  { id: 5, name: "Bella Moda", segmento: "Moda", email: "ana@bellamoda.com", recency: 5, frequency: 1, mrr: 600, daysInBase: 14, daysSinceContact: 1 },
+  { id: 6, name: "Construtora Pilar", segmento: "Construção", email: "marketing@pilar.com.br", recency: 1, frequency: 4, mrr: 4200, daysInBase: 610, daysSinceContact: 92, previousSegment: "loyal" },
+  { id: 7, name: "Clínica Vita", segmento: "Saúde", email: "contato@vita.med.br", recency: 3, frequency: 3, mrr: 1400, daysInBase: 240, daysSinceContact: 18 },
+  { id: 8, name: "EduMais Cursos", segmento: "Educação", email: "hi@edumais.com", recency: 4, frequency: 2, mrr: 950, daysInBase: 65, daysSinceContact: 6 },
+  { id: 9, name: "Fit&Co Academia", segmento: "Fitness", email: "marketing@fitco.com", recency: 2, frequency: 2, mrr: 420, daysInBase: 320, daysSinceContact: 55, previousSegment: "needAttention" },
+  { id: 10, name: "AutoPeças Brasil", segmento: "Automotivo", email: "vendas@autopecas.com.br", recency: 1, frequency: 1, mrr: 280, daysInBase: 720, daysSinceContact: 210 },
+  { id: 11, name: "Pet Lovers", segmento: "Pet", email: "ola@petlovers.com", recency: 3, frequency: 2, mrr: 700, daysInBase: 110, daysSinceContact: 22 },
+  { id: 12, name: "Imobiliária Horizonte", segmento: "Imobiliária", email: "marketing@horizonte.com", recency: 5, frequency: 3, mrr: 2600, daysInBase: 380, daysSinceContact: 3 },
 ];
 
-/* --------------------------------- Helpers ------------------------------ */
+const CLIENTES: Cliente[] = CLIENTES_MOCK.map((c) => ({ ...c, vScore: mrrToV(c.mrr) }));
 
-function diffDays(iso: string) {
-  return Math.floor(
-    (today.getTime() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24),
-  );
-}
+/* ----------------------------- Helpers UI ------------------------------- */
 
-function tempoNaBase(dias: number) {
-  if (dias < 30) return `${dias}d`;
-  if (dias < 365) return `${Math.floor(dias / 30)}m`;
-  const anos = Math.floor(dias / 365);
-  const meses = Math.floor((dias % 365) / 30);
-  return meses ? `${anos}a ${meses}m` : `${anos}a`;
-}
-
-function initials(nome: string) {
-  return nome
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
-
-/* ------------------------------- Component ------------------------------ */
-
-export default function Clientes() {
-  const [clientes] = useState<Cliente[]>(mockClientes);
-  const [search, setSearch] = useState("");
-  const [stageFilter, setStageFilter] = useState<InactivityKey | "all">("all");
-  const [view, setView] = useState<"grid" | "list">("list");
-  const [openDialog, setOpenDialog] = useState(false);
-
-  const enriched = useMemo(
-    () =>
-      clientes.map((c) => {
-        const diasInativo = diffDays(c.ultimaResposta);
-        const diasNaBase = diffDays(c.entradaBase);
-        const stageKey = classifyInactivity(diasInativo);
-        const stage = inactivitySteps.find((s) => s.key === stageKey)!;
-        return { ...c, diasInativo, diasNaBase, stage };
-      }),
-    [clientes],
-  );
-
-  const filtered = useMemo(
-    () =>
-      enriched.filter((c) => {
-        const matchSearch =
-          !search ||
-          c.nome.toLowerCase().includes(search.toLowerCase()) ||
-          c.email.toLowerCase().includes(search.toLowerCase()) ||
-          c.telefone.includes(search);
-        const matchStage =
-          stageFilter === "all" || c.stage.key === stageFilter;
-        return matchSearch && matchStage;
-      }),
-    [enriched, search, stageFilter],
-  );
-
-  const stats = useMemo(() => {
-    const total = enriched.length;
-    const novos30 = enriched.filter((c) => c.diasNaBase <= 30).length;
-    const emRisco = enriched.filter(
-      (c) => c.diasInativo >= 30 && c.diasInativo < 90,
-    ).length;
-    const criticos = enriched.filter((c) => c.diasInativo >= 90).length;
-    const valorMensal = enriched.reduce(
-      (acc, c) => acc + (c.valorMensal || 0),
-      0,
-    );
-    return { total, novos30, emRisco, criticos, valorMensal };
-  }, [enriched]);
-
-  const stageCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    enriched.forEach((c) => {
-      counts[c.stage.key] = (counts[c.stage.key] || 0) + 1;
-    });
-    return counts;
-  }, [enriched]);
-
+function ScoreDot({ value, label }: { value: number; label: string }) {
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Users className="h-7 w-7 text-primary" />
-            Clientes
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Acompanhe o tempo na base e a saúde de cada relacionamento
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <LinkIcon className="h-4 w-4 mr-2" />
-            Link de Cadastro
-          </Button>
-          <div className="flex rounded-md border border-border overflow-hidden">
-            <Button
-              variant={view === "grid" ? "secondary" : "ghost"}
-              size="icon"
-              className="rounded-none"
-              onClick={() => setView("grid")}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={view === "list" ? "secondary" : "ghost"}
-              size="icon"
-              className="rounded-none"
-              onClick={() => setView("list")}
-            >
-              <ListIcon className="h-4 w-4" />
-            </Button>
-          </div>
-          <CadastrarClienteDialog
-            open={openDialog}
-            onOpenChange={setOpenDialog}
+    <div className="flex items-center gap-1.5">
+      <span className="text-[10px] font-semibold text-muted-foreground w-3">{label}</span>
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <span
+            key={n}
+            className={cn(
+              "h-1.5 w-1.5 rounded-full",
+              n <= value ? "bg-primary" : "bg-muted",
+            )}
           />
-        </div>
+        ))}
       </div>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard
-          title="Total de Clientes"
-          value={stats.total.toString()}
-          icon={<Users className="h-4 w-4" />}
-        />
-        <KpiCard
-          title="Novos (30d)"
-          value={stats.novos30.toString()}
-          subtitle="entraram este mês"
-          icon={<TrendingUp className="h-4 w-4 text-success" />}
-        />
-        <KpiCard
-          title="Em risco"
-          value={stats.emRisco.toString()}
-          subtitle="30 a 90 dias sem responder"
-          icon={<AlertTriangle className="h-4 w-4 text-warning" />}
-          tone="warning"
-        />
-        <KpiCard
-          title="Críticos"
-          value={stats.criticos.toString()}
-          subtitle="90+ dias sem responder"
-          icon={<Bell className="h-4 w-4 text-destructive" />}
-          tone="danger"
-        />
-      </div>
-
-      {/* Filtros por inatividade */}
-      <Card className="surface-card border-0">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary" />
-                Saúde por inatividade
-              </CardTitle>
-              <CardDescription>
-                Filtre por quanto tempo o cliente está sem responder
-              </CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" className="text-xs">
-              <Bell className="h-3.5 w-3.5 mr-1.5" />
-              Configurar notificações
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            <StageChip
-              active={stageFilter === "all"}
-              onClick={() => setStageFilter("all")}
-              label="Todos"
-              count={enriched.length}
-            />
-            {inactivitySteps.map((s) => (
-              <StageChip
-                key={s.key}
-                active={stageFilter === s.key}
-                onClick={() => setStageFilter(s.key)}
-                label={s.label}
-                count={stageCounts[s.key] || 0}
-                tone={s.tone}
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Search + filtros */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome, email ou telefone…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Button variant="outline">
-          <Filter className="h-4 w-4 mr-2" />
-          Filtros
-        </Button>
-      </div>
-
-      {/* Lista */}
-      {filtered.length === 0 ? (
-        <Card className="surface-card border-0">
-          <CardContent className="py-16 text-center text-muted-foreground">
-            Nenhum cliente encontrado com esses filtros.
-          </CardContent>
-        </Card>
-      ) : view === "list" ? (
-        <Card className="surface-card border-0 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-muted-foreground">
-                <tr className="text-left">
-                  <th className="px-4 py-3 font-medium">Cliente</th>
-                  <th className="px-4 py-3 font-medium">Contato</th>
-                  <th className="px-4 py-3 font-medium">Tempo na base</th>
-                  <th className="px-4 py-3 font-medium">Sem responder</th>
-                  <th className="px-4 py-3 font-medium">Pipeline</th>
-                  <th className="px-4 py-3 font-medium text-right">Valor/mês</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((c) => (
-                  <tr
-                    key={c.id}
-                    className="border-t border-border hover:bg-muted/30 transition-colors"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-gradient-primary flex items-center justify-center text-xs font-semibold text-primary-foreground">
-                          {initials(c.nome)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-medium truncate">{c.nome}</p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {c.empresa || c.segmento}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p>{c.telefone}</p>
-                      <p className="text-xs text-muted-foreground">{c.email}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge
-                        variant="outline"
-                        className="bg-muted/40 border-border"
-                      >
-                        {tempoNaBase(c.diasNaBase)}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge
-                        variant="outline"
-                        className={cn(toneClasses[c.stage.tone])}
-                      >
-                        {c.diasInativo === 0
-                          ? "Hoje"
-                          : `${c.diasInativo}d • ${c.stage.label}`}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {c.pipeline || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {c.valorMensal
-                        ? c.valorMensal.toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          })
-                        : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map((c) => (
-            <Card
-              key={c.id}
-              className="surface-card border-0 hover:ring-1 hover:ring-primary/40 transition-all"
-            >
-              <CardContent className="p-5 space-y-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-11 w-11 rounded-full bg-gradient-primary flex items-center justify-center text-sm font-semibold text-primary-foreground shrink-0">
-                      {initials(c.nome)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold truncate">{c.nome}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {c.empresa || c.segmento}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className={cn("shrink-0", toneClasses[c.stage.tone])}
-                  >
-                    {c.stage.label}
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="rounded-lg bg-muted/40 p-2.5">
-                    <p className="text-muted-foreground">Tempo na base</p>
-                    <p className="font-semibold text-sm mt-0.5">
-                      {tempoNaBase(c.diasNaBase)}
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-muted/40 p-2.5">
-                    <p className="text-muted-foreground">Sem responder</p>
-                    <p
-                      className={cn(
-                        "font-semibold text-sm mt-0.5",
-                        c.stage.tone === "critical" && "text-destructive",
-                        c.stage.tone === "danger" && "text-destructive",
-                        c.stage.tone === "warning" && "text-warning",
-                      )}
-                    >
-                      {c.diasInativo === 0 ? "Hoje" : `${c.diasInativo}d`}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-1">
-                  {c.tags.slice(0, 3).map((t) => (
-                    <Badge
-                      key={t}
-                      variant="outline"
-                      className="text-[10px] bg-muted/30"
-                    >
-                      {t}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
 
-/* ---------------------------- Subcomponentes ---------------------------- */
+function SegmentBadge({ seg }: { seg: Segment }) {
+  const Icon = seg.icon;
+  return (
+    <div
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",
+        seg.bg,
+        seg.border,
+        seg.color,
+      )}
+    >
+      <Icon className="h-3 w-3" />
+      {seg.label}
+    </div>
+  );
+}
+
+/* =============================== Página ================================== */
+
+export default function Clientes() {
+  const [search, setSearch] = useState("");
+  const [view, setView] = useState<"list" | "grid" | "matrix">("list");
+  const [segmentFilter, setSegmentFilter] = useState<SegmentKey | "all">("all");
+  const [openCreate, setOpenCreate] = useState(false);
+
+  const enriched = useMemo(
+    () =>
+      CLIENTES.map((c) => {
+        const segKey = classifyRFV(c.recency, c.frequency, c.vScore);
+        return { ...c, segKey, segment: SEGMENTS[segKey] };
+      }),
+    [],
+  );
+
+  const filtered = useMemo(() => {
+    return enriched.filter((c) => {
+      const matchesSearch =
+        !search ||
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.email.toLowerCase().includes(search.toLowerCase());
+      const matchesSeg = segmentFilter === "all" || c.segKey === segmentFilter;
+      return matchesSearch && matchesSeg;
+    });
+  }, [enriched, search, segmentFilter]);
+
+  // KPIs
+  const totalMRR = enriched.reduce((s, c) => s + c.mrr, 0);
+  const champions = enriched.filter((c) => c.segKey === "champions").length;
+  const atRisk = enriched.filter(
+    (c) => c.segKey === "atRisk" || c.segKey === "cantLose",
+  ).length;
+  const lost = enriched.filter((c) => c.segKey === "lost" || c.segKey === "hibernating").length;
+
+  // Movimentações de segmento (alertas)
+  const movements = enriched
+    .filter((c) => c.previousSegment && c.previousSegment !== c.segKey)
+    .map((c) => ({
+      cliente: c,
+      from: SEGMENTS[c.previousSegment!],
+      to: c.segment,
+      down: ["atRisk", "cantLose", "lost", "hibernating", "aboutToSleep"].includes(c.segKey),
+    }));
+
+  // Distribuição por segmento
+  const distribution = (Object.keys(SEGMENTS) as SegmentKey[])
+    .map((k) => ({
+      key: k,
+      seg: SEGMENTS[k],
+      count: enriched.filter((c) => c.segKey === k).length,
+    }))
+    .filter((d) => d.count > 0)
+    .sort((a, b) => b.count - a.count);
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <div className="space-y-6 p-6">
+        {/* Header */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+              <Users className="h-6 w-6 text-primary" />
+              Clientes
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Matriz <strong>RFV</strong> · Recência · Frequência · Valor (MRR) — visão estratégica do seu portfólio.
+            </p>
+          </div>
+
+          <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" /> Cadastrar cliente
+              </Button>
+            </DialogTrigger>
+            <CadastrarClienteDialog onClose={() => setOpenCreate(false)} />
+          </Dialog>
+        </div>
+
+        {/* KPIs */}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <KpiCard
+            label="MRR total"
+            value={`R$ ${totalMRR.toLocaleString("pt-BR")}`}
+            hint="Receita recorrente mensal"
+            tone="primary"
+          />
+          <KpiCard
+            label="Champions"
+            value={String(champions)}
+            hint="R, F e V altos"
+            tone="success"
+            icon={Crown}
+          />
+          <KpiCard
+            label="At Risk / Can't Lose"
+            value={String(atRisk)}
+            hint="Bons clientes sumindo"
+            tone="danger"
+            icon={AlertTriangle}
+          />
+          <KpiCard
+            label="Hibernando / Perdidos"
+            value={String(lost)}
+            hint="Reativar ou arquivar"
+            tone="muted"
+            icon={Snowflake}
+          />
+        </div>
+
+        {/* Alertas de movimentação */}
+        {movements.length > 0 && (
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Bell className="h-4 w-4 text-amber-600" />
+                Mudanças de segmento ({movements.length})
+              </CardTitle>
+              <CardDescription>
+                Clientes que migraram de segmento desde a última análise.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {movements.map((m) => (
+                <div
+                  key={m.cliente.id}
+                  className="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    {m.down ? (
+                      <ArrowDownRight className="h-4 w-4 text-red-500" />
+                    ) : (
+                      <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+                    )}
+                    <span className="font-medium">{m.cliente.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <SegmentBadge seg={m.from} />
+                    <span className="text-muted-foreground">→</span>
+                    <SegmentBadge seg={m.to} />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Distribuição por segmento (chips clicáveis) */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Distribuição por segmento</CardTitle>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 cursor-help text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="text-xs">
+                    Cada cliente recebe um score <strong>R-F-V</strong> de 1 a 5 e é
+                    classificado em um dos 11 segmentos. Clique para filtrar.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSegmentFilter("all")}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-medium transition",
+                  segmentFilter === "all"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "bg-background hover:bg-muted",
+                )}
+              >
+                Todos · {enriched.length}
+              </button>
+              {distribution.map((d) => {
+                const active = segmentFilter === d.key;
+                const Icon = d.seg.icon;
+                return (
+                  <button
+                    key={d.key}
+                    onClick={() => setSegmentFilter(d.key)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition",
+                      active
+                        ? cn(d.seg.bg, d.seg.border, d.seg.color, "ring-2 ring-offset-1 ring-offset-background")
+                        : cn(d.seg.bg, d.seg.border, d.seg.color, "opacity-70 hover:opacity-100"),
+                    )}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {d.seg.label} · {d.count}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Toolbar */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="relative flex-1 md:max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nome ou e-mail…"
+              className="pl-9"
+            />
+          </div>
+          <div className="flex items-center gap-1 rounded-md border bg-background p-0.5">
+            <ViewBtn active={view === "list"} onClick={() => setView("list")} icon={ListIcon} label="Lista" />
+            <ViewBtn active={view === "grid"} onClick={() => setView("grid")} icon={LayoutGrid} label="Grid" />
+            <ViewBtn active={view === "matrix"} onClick={() => setView("matrix")} icon={TrendingUp} label="Matriz R×F" />
+          </div>
+        </div>
+
+        {/* Conteúdo */}
+        {view === "list" && <ListaView clientes={filtered} />}
+        {view === "grid" && <GridView clientes={filtered} />}
+        {view === "matrix" && <MatrixView clientes={filtered} />}
+
+        {filtered.length === 0 && (
+          <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
+            Nenhum cliente encontrado com os filtros atuais.
+          </div>
+        )}
+      </div>
+    </TooltipProvider>
+  );
+}
+
+/* ------------------------------- Subcomponents -------------------------- */
 
 function KpiCard({
-  title,
+  label,
   value,
-  subtitle,
-  icon,
+  hint,
   tone,
+  icon: Icon,
 }: {
-  title: string;
+  label: string;
   value: string;
-  subtitle?: string;
-  icon?: React.ReactNode;
-  tone?: "warning" | "danger";
+  hint: string;
+  tone: "primary" | "success" | "danger" | "muted";
+  icon?: typeof Crown;
 }) {
+  const tones = {
+    primary: "border-primary/30 bg-primary/5",
+    success: "border-emerald-500/30 bg-emerald-500/5",
+    danger: "border-red-500/30 bg-red-500/5",
+    muted: "border-border bg-muted/30",
+  };
   return (
-    <Card className="surface-card border-0">
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">{title}</p>
-          {icon}
+    <Card className={cn("border", tones[tone])}>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {label}
+          </p>
+          {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
         </div>
-        <p
-          className={cn(
-            "text-2xl font-bold mt-2",
-            tone === "warning" && "text-warning",
-            tone === "danger" && "text-destructive",
-          )}
-        >
-          {value}
-        </p>
-        {subtitle && (
-          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-        )}
+        <p className="mt-1 text-2xl font-semibold">{value}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
       </CardContent>
     </Card>
   );
 }
 
-function StageChip({
-  label,
-  count,
+function ViewBtn({
   active,
   onClick,
-  tone,
+  icon: Icon,
+  label,
 }: {
-  label: string;
-  count: number;
   active: boolean;
   onClick: () => void;
-  tone?: "success" | "info" | "warning" | "danger" | "critical";
+  icon: typeof ListIcon;
+  label: string;
 }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
-        active
-          ? "bg-primary text-primary-foreground border-primary shadow-elegant"
-          : tone
-            ? cn("hover:scale-105", toneClasses[tone])
-            : "bg-muted/40 border-border text-foreground hover:bg-muted",
+        "inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition",
+        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
       )}
     >
+      <Icon className="h-3.5 w-3.5" />
       {label}
-      <span
-        className={cn(
-          "ml-1.5 px-1.5 py-0.5 rounded-full text-[10px]",
-          active ? "bg-primary-foreground/20" : "bg-background/40",
-        )}
-      >
-        {count}
-      </span>
     </button>
   );
 }
 
-function CadastrarClienteDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-}) {
+type EnrichedCliente = Cliente & { segKey: SegmentKey; segment: Segment };
+
+function ListaView({ clientes }: { clientes: EnrichedCliente[] }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-elegant">
-          <Plus className="h-4 w-4 mr-2" />
-          Cadastrar Cliente
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Cadastrar Cliente</DialogTitle>
-          <DialogDescription>
-            Adicione um novo cliente à sua base. Você poderá acompanhar o tempo
-            de relacionamento e inatividade.
-          </DialogDescription>
-        </DialogHeader>
+    <div className="overflow-hidden rounded-lg border bg-card">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+          <tr>
+            <th className="px-4 py-3 text-left">Cliente</th>
+            <th className="px-4 py-3 text-left">Segmento RFV</th>
+            <th className="px-4 py-3 text-left">Score</th>
+            <th className="px-4 py-3 text-right">MRR</th>
+            <th className="px-4 py-3 text-right">Na base</th>
+            <th className="px-4 py-3 text-right">Sem contato</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {clientes.map((c) => (
+            <tr key={c.id} className="hover:bg-muted/30">
+              <td className="px-4 py-3">
+                <div className="font-medium">{c.name}</div>
+                <div className="text-xs text-muted-foreground">{c.segmento} · {c.email}</div>
+              </td>
+              <td className="px-4 py-3"><SegmentBadge seg={c.segment} /></td>
+              <td className="px-4 py-3">
+                <div className="space-y-1">
+                  <ScoreDot label="R" value={c.recency} />
+                  <ScoreDot label="F" value={c.frequency} />
+                  <ScoreDot label="V" value={c.vScore} />
+                </div>
+              </td>
+              <td className="px-4 py-3 text-right font-mono text-sm">
+                R$ {c.mrr.toLocaleString("pt-BR")}
+              </td>
+              <td className="px-4 py-3 text-right text-muted-foreground">{c.daysInBase}d</td>
+              <td className="px-4 py-3 text-right text-muted-foreground">{c.daysSinceContact}d</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
-        <div className="space-y-4 pt-2">
-          <div className="space-y-2">
-            <Label>Pipeline (opcional)</Label>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um pipeline" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="lp">Landing Page - Dua</SelectItem>
-                <SelectItem value="trafego">Tráfego Pago</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Nome Cliente/Empresa</Label>
-              <Input placeholder="Ex: João Silva ou Agência XYZ" />
+function GridView({ clientes }: { clientes: EnrichedCliente[] }) {
+  return (
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+      {clientes.map((c) => (
+        <Card key={c.id} className={cn("border", c.segment.border)}>
+          <CardContent className="space-y-3 p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="truncate font-medium">{c.name}</div>
+                <div className="truncate text-xs text-muted-foreground">{c.segmento}</div>
+              </div>
+              <SegmentBadge seg={c.segment} />
             </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input type="email" placeholder="cliente@email.com" />
+            <div className="grid grid-cols-3 gap-2 rounded-md border bg-muted/30 p-2">
+              <RfvCell label="R" value={c.recency} />
+              <RfvCell label="F" value={c.frequency} />
+              <RfvCell label="V" value={c.vScore} />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Telefone</Label>
-              <Input placeholder="(11) 99999-9999" />
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">MRR</span>
+              <span className="font-mono font-semibold">R$ {c.mrr.toLocaleString("pt-BR")}</span>
             </div>
-            <div className="space-y-2">
-              <Label>CPF/CNPJ</Label>
-              <Input placeholder="00.000.000/0000-00" />
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{c.daysInBase}d na base</span>
+              <span>{c.daysSinceContact}d sem contato</span>
             </div>
-          </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
-          <div className="space-y-2">
-            <Label>CEP</Label>
-            <Input placeholder="00000-000" />
-          </div>
+function RfvCell({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="text-center">
+      <div className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</div>
+      <div className="text-lg font-bold">{value}</div>
+    </div>
+  );
+}
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-2 col-span-2">
-              <Label>Endereço</Label>
-              <Input placeholder="Rua, Avenida…" />
-            </div>
-            <div className="space-y-2">
-              <Label>Número</Label>
-              <Input placeholder="Nº" />
-            </div>
-          </div>
+function MatrixView({ clientes }: { clientes: EnrichedCliente[] }) {
+  // 5x5 matriz Recência (eixo Y, alto p/ baixo: 5→1) × Frequência (eixo X 1→5)
+  const cells: EnrichedCliente[][][] = Array.from({ length: 5 }, () =>
+    Array.from({ length: 5 }, () => []),
+  );
+  clientes.forEach((c) => {
+    const row = 5 - c.recency; // 0..4
+    const col = c.frequency - 1; // 0..4
+    cells[row][col].push(c);
+  });
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-2">
-              <Label>Bairro</Label>
-              <Input placeholder="Bairro" />
-            </div>
-            <div className="space-y-2">
-              <Label>Cidade</Label>
-              <Input placeholder="Cidade" />
-            </div>
-            <div className="space-y-2">
-              <Label>Estado</Label>
-              <Input placeholder="UF" maxLength={2} />
-            </div>
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Matriz Recência × Frequência</CardTitle>
+        <CardDescription>
+          Tamanho da bolha = MRR. Cor = segmento. Eixo Y: Recência (5 = recente). Eixo X: Frequência.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-2">
+          {/* Y axis labels */}
+          <div className="flex flex-col justify-between py-2 pr-1 text-[10px] font-semibold uppercase text-muted-foreground">
+            <span>R 5</span><span>4</span><span>3</span><span>2</span><span>R 1</span>
           </div>
-
-          <div className="space-y-2">
-            <Label>Projeto / Interesse</Label>
-            <Input placeholder="Ex: Logo, Site, Social Media" />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Tags</Label>
-            <Input placeholder="branding, urgente" />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Observações</Label>
-            <Textarea placeholder="Notas sobre o cliente" rows={3} />
-          </div>
-
-          <div className="rounded-lg bg-primary/10 border border-primary/30 p-3 text-xs text-foreground/80">
-            <p className="font-medium flex items-center gap-1.5 mb-1">
-              <Bell className="h-3.5 w-3.5 text-primary" />
-              Notificações de inatividade
-            </p>
-            Você será notificado se este cliente ficar sem responder por 1, 3,
-            7, 15, 30, 45, 60, 90, 180 ou 360 dias.
+          <div className="grid flex-1 grid-cols-5 gap-1">
+            {cells.map((row, ri) =>
+              row.map((cell, ci) => (
+                <div
+                  key={`${ri}-${ci}`}
+                  className="relative flex min-h-[80px] items-center justify-center rounded border bg-muted/20 p-1"
+                >
+                  <div className="absolute left-1 top-1 text-[9px] text-muted-foreground/60">
+                    {5 - ri},{ci + 1}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-1">
+                    {cell.map((c) => {
+                      const size = 14 + c.vScore * 5; // 19..39 px
+                      return (
+                        <Tooltip key={c.id}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={cn(
+                                "cursor-pointer rounded-full border-2 transition hover:scale-110",
+                                c.segment.bg,
+                                c.segment.border,
+                              )}
+                              style={{ width: size, height: size }}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="space-y-1 text-xs">
+                              <div className="font-semibold">{c.name}</div>
+                              <SegmentBadge seg={c.segment} />
+                              <div className="text-muted-foreground">
+                                R{c.recency} · F{c.frequency} · V{c.vScore} · R$ {c.mrr.toLocaleString("pt-BR")}/mês
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                </div>
+              )),
+            )}
           </div>
         </div>
+        {/* X axis */}
+        <div className="ml-7 mt-1 grid grid-cols-5 gap-1 text-center text-[10px] font-semibold uppercase text-muted-foreground">
+          <span>F 1</span><span>2</span><span>3</span><span>4</span><span>F 5</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button
-            className="bg-gradient-primary text-primary-foreground hover:opacity-90"
-            onClick={() => {
-              toast.success("Cliente cadastrado com sucesso!");
-              onOpenChange(false);
-            }}
-          >
-            Cadastrar Cliente
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+/* ------------------------- Cadastrar Cliente Dialog ---------------------- */
+
+function CadastrarClienteDialog({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    segmento: "",
+    mrr: "",
+    notes: "",
+  });
+
+  function submit() {
+    if (!form.name) {
+      toast.error("Informe o nome do cliente");
+      return;
+    }
+    toast.success(`Cliente ${form.name} cadastrado!`, {
+      description: "Será classificado na matriz RFV após o primeiro ciclo.",
+    });
+    onClose();
+  }
+
+  return (
+    <DialogContent className="max-w-lg">
+      <DialogHeader>
+        <DialogTitle>Novo cliente</DialogTitle>
+        <DialogDescription>
+          Cadastre o cliente. A classificação RFV é calculada automaticamente conforme as interações.
+        </DialogDescription>
+      </DialogHeader>
+      <div className="space-y-3">
+        <div>
+          <Label>Nome *</Label>
+          <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Loja Aurora" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>E-mail</Label>
+            <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="contato@..." />
+          </div>
+          <div>
+            <Label>MRR estimado (R$)</Label>
+            <Input type="number" value={form.mrr} onChange={(e) => setForm({ ...form, mrr: e.target.value })} placeholder="0" />
+          </div>
+        </div>
+        <div>
+          <Label>Segmento</Label>
+          <Select value={form.segmento} onValueChange={(v) => setForm({ ...form, segmento: v })}>
+            <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+            <SelectContent>
+              {["E-commerce","SaaS","Saúde","Educação","Food","Moda","Pet","Imobiliária","Outro"].map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Observações</Label>
+          <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>Cancelar</Button>
+        <Button onClick={submit}>Cadastrar</Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }
