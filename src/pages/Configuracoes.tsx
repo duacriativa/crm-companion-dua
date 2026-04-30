@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Integracoes } from "./configuracoes/Integracoes";
 import { AsaasConfig } from "./configuracoes/AsaasConfig";
 import { Perfil } from "./configuracoes/Perfil";
+import { Notificacoes } from "./configuracoes/Notificacoes";
 import { toast } from "sonner";
 
 const tabs = [
@@ -57,7 +58,9 @@ export default function Configuracoes() {
 
       {activeTab === "Perfil" && <Perfil />}
 
-      {activeTab !== "Integrações" && activeTab !== "Perfil" && (
+      {(activeTab === "Notificações" || activeTab === "Automações") && <Notificacoes />}
+
+      {activeTab !== "Integrações" && activeTab !== "Perfil" && activeTab !== "Notificações" && activeTab !== "Automações" && (
         <div className="surface-card p-12 text-center animate-fade-in">
           <p className="text-lg font-semibold">{activeTab}</p>
           <p className="text-sm text-muted-foreground mt-2">
