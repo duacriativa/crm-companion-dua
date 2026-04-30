@@ -179,9 +179,9 @@ const SEGMENTS: Record<SegmentKey, Segment> = {
     label: "11. Perdidos",
     description: "Praticamente perdidos. Última tentativa ou arquive.",
     icon: Skull,
-    color: "text-zinc-600 dark:text-zinc-400",
-    bg: "bg-zinc-500/10",
-    border: "border-zinc-500/30",
+    color: "text-white",
+    bg: "bg-rose-400",
+    border: "border-rose-500",
   },
 };
 
