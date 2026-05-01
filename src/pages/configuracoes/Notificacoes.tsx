@@ -152,6 +152,97 @@ export function Notificacoes() {
           ))}
         </div>
       </Card>
+
+      {/* Alertas RFV — mudança de segmento de cliente */}
+      <Card className="surface-card overflow-hidden">
+        <div className="p-6 border-b border-border flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
+              <TrendingDown className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                Alertas RFV de clientes
+                <Badge className="bg-primary/15 text-primary border-0 text-[10px] h-4 px-1.5">Novo</Badge>
+              </h2>
+              <p className="text-xs text-muted-foreground">Seja avisado quando um cliente muda de segmento na matriz RFV</p>
+            </div>
+          </div>
+          <Switch
+            checked={rfvAlerts.enabled}
+            onCheckedChange={(v) => setRfvAlerts({ ...rfvAlerts, enabled: v })}
+          />
+        </div>
+
+        <div className={`p-6 space-y-5 transition-opacity ${rfvAlerts.enabled ? "" : "opacity-50 pointer-events-none"}`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Frequência dos alertas</p>
+              <p className="text-xs text-muted-foreground">Com que frequência verificar mudanças de segmento</p>
+            </div>
+            <Select value={rfvFrequency} onValueChange={setRfvFrequency}>
+              <SelectTrigger className="w-44 h-9 text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="realtime">Em tempo real</SelectItem>
+                <SelectItem value="daily">Diariamente</SelectItem>
+                <SelectItem value="weekly">Semanalmente</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold mb-1">Mudanças críticas (recomendado)</p>
+            <p className="text-xs text-muted-foreground mb-3">Eventos que pedem ação imediata da sua equipe.</p>
+            <div className="space-y-2">
+              {[
+                { key: "championToAtRisk", icon: AlertTriangle, color: "text-rose-500", title: "Campeão → Em risco", desc: "Um dos seus melhores clientes parou de comprar com a frequência habitual." },
+                { key: "cantLoseDetected", icon: AlertTriangle, color: "text-yellow-500", title: "Caiu para 'Não pode perder'", desc: "Cliente de alto valor sumiu — prioridade máxima de reativação." },
+                { key: "loyalToHibernating", icon: Snowflake, color: "text-slate-500", title: "Leal → Hibernando", desc: "Cliente fiel ficou inativo por muito tempo." },
+                { key: "becameLost", icon: TrendingDown, color: "text-rose-400", title: "Cliente foi para 'Perdidos'", desc: "Última oportunidade de campanha de winback." },
+                { key: "newChampion", icon: Crown, color: "text-amber-500", title: "Novo Campeão 🎉", desc: "Cliente atingiu R, F e V altos — hora de recompensar." },
+              ].map((e) => {
+                const Icon = e.icon;
+                return (
+                  <div key={e.key} className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20">
+                    <div className="flex items-start gap-3 flex-1 pr-4">
+                      <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${e.color}`} />
+                      <div>
+                        <p className="text-sm font-medium">{e.title}</p>
+                        <p className="text-xs text-muted-foreground">{e.desc}</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={rfvAlerts[e.key as keyof typeof rfvAlerts] as boolean}
+                      onCheckedChange={(v) => setRfvAlerts({ ...rfvAlerts, [e.key]: v })}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-primary/5">
+            <div className="flex items-start gap-3">
+              <TrendingUp className="h-4 w-4 mt-0.5 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Resumo semanal RFV</p>
+                <p className="text-xs text-muted-foreground">Receba toda segunda um panorama da saúde do seu portfólio.</p>
+              </div>
+            </div>
+            <Switch
+              checked={rfvAlerts.weeklyDigest}
+              onCheckedChange={(v) => setRfvAlerts({ ...rfvAlerts, weeklyDigest: v })}
+            />
+          </div>
+
+          <Button
+            className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-elegant h-11"
+            onClick={() => toast.success("Alertas RFV salvos!")}
+          >
+            Salvar alertas RFV
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 }
