@@ -27,6 +27,17 @@ export function Notificacoes() {
     insights: true,
   });
 
+  const [rfvAlerts, setRfvAlerts] = useState({
+    enabled: true,
+    championToAtRisk: true,
+    loyalToHibernating: true,
+    cantLoseDetected: true,
+    newChampion: true,
+    becameLost: true,
+    weeklyDigest: false,
+  });
+  const [rfvFrequency, setRfvFrequency] = useState("realtime");
+
   return (
     <div className="space-y-6 animate-fade-in">
       <Card className="surface-card overflow-hidden">
