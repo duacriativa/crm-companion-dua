@@ -4,14 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Bell, FolderKanban, CheckSquare, MessageCircle, Zap, RefreshCw, Sparkles, RotateCw } from "lucide-react";
+import { Bell, FolderKanban, CheckSquare, MessageCircle, Zap, RefreshCw, Sparkles, RotateCw, TrendingDown, Crown, AlertTriangle, Snowflake } from "lucide-react";
+import { toast } from "sonner";
 
-type SubTab = "projetos" | "tarefas" | "notificacoes" | "whatsapp" | "recorrentes" | "atalhos";
+type SubTab = "projetos" | "tarefas" | "notificacoes" | "whatsapp" | "recorrentes" | "atalhos" | "rfv";
 
 const subTabs: { id: SubTab; label: string; icon: any; badge?: string }[] = [
   { id: "projetos", label: "Projetos", icon: FolderKanban },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare },
   { id: "notificacoes", label: "Notificações", icon: Bell },
+  { id: "rfv", label: "Alertas RFV", icon: TrendingDown, badge: "Novo" },
   { id: "whatsapp", label: "WhatsApp", icon: MessageCircle, badge: "Novo" },
   { id: "recorrentes", label: "Recorrentes", icon: RefreshCw },
   { id: "atalhos", label: "Atalhos", icon: Zap },
