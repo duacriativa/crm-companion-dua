@@ -5,6 +5,7 @@ import { Search, Bell, Headphones, Globe, Trophy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { NotificationsBell } from "@/components/NotificationsBell";
 
 export default function AppLayout() {
   return (
@@ -42,10 +43,7 @@ export default function AppLayout() {
               <Button variant="ghost" size="icon" aria-label="Suporte">
                 <Headphones className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" aria-label="Notificações" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary animate-pulse-glow" />
-              </Button>
+              <NotificationsBell />
             </div>
           </header>
 
